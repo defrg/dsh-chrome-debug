@@ -14,6 +14,12 @@
   },
   "type": "module",
   "main": "./lib/index.js",
+  "scripts": {
+    "check": "node scripts/check-config.mjs && node scripts/check-route-auth.mjs && node scripts/check-launch-args.mjs",
+    "check:config": "node scripts/check-config.mjs",
+    "check:route-auth": "node scripts/check-route-auth.mjs",
+    "check:launch-args": "node scripts/check-launch-args.mjs"
+  },
   "exports": {
     ".": "./lib/index.js",
     "./cdp": "./lib/cdp.js",
