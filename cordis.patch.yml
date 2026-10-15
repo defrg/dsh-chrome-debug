@@ -1,0 +1,27 @@
+# dsh-chrome-debug bundle 层：插入 Chrome 调试插件。
+#
+# 这里**刻意不带任何本机路径**：不写 config 时插件会自己解析（见 lib/cdp.js）：
+#   chromePath    → CHROME_PATH 环境变量，或各标准安装位置里的 chrome.exe
+#   userDataDir   → <DSH_HOME>/chrome-debug/profile（DSH_HOME 默认 ~/.dsh）
+#   screenshotDir → <DSH_HOME>/chrome-debug/shots
+# 想固定下来就在下面加 config（或在本 profile 的 cordis.patch.yml 里覆盖同一 id）。
+#
+# config 字段：
+#   chromePath     chrome.exe 路径（留空 = 自动探测）
+#   port           调试端口（默认 9222）
+#   userDataDir    调试专用 profile 目录；**不要指向你日常的 profile**
+#   extraArgs      追加的启动参数数组（例如 ["--remote-allow-origins=*"]、["--headless=new"]）
+#   headless       true 则加 --headless=new
+#   startTimeoutMs 启动后等端点就绪的上限（默认 20000）
+#   timeoutMs      单条 CDP 命令超时（默认 15000）
+#   screenshotDir  截图落盘目录（留空 = 默认目录）
+#   maxTextChars   工具返回文本截断上限（默认 8000）
+#
+# 本机要固定成某个专用 profile 时，示例：
+#   config:
+#     port: 9222
+#     userDataDir: '<你的调试专用 profile 目录>'
+#     screenshotDir: '<截图目录>'
+- insert:
+    - id: dsh-chrome-debug
+      name: 'dsh-chrome-debug'
