@@ -56,6 +56,13 @@ DSH（DeepSeek Harness）插件：**把 Chrome 的调试能力接成工具，并
 
 留空即走下面的可移植默认值 —— 也就是说"自动探测 Chrome"和"profile 落在 DSH 数据根下"都是默认行为。
 
+> **改代码时的硬性要求**：表单字段必须在 schema 里标 **`.volatile()`**。按官方 cookbook
+> [实践指南：即时配置表单](https://deepseek-harness.github.io/deepseek-harness/reference/cookbook/adding-a-settings-card)，
+> **普通字段不进入设置 schema** —— 漏标的表现就是"插件详情页里一个输入框都没有"（宿主侧的 `Config` 状态会停在 `absent`）。
+> 相应地，运行时这些字段拿到的是 `Volatile<T>` 包装，要用 `.get()` 取值：本插件在每个工具调用前重新快照配置，
+> 并在 `loader/volatile-update` 时刷新，所以**界面改完即时生效、无需重启**。
+> `node scripts/check-config.mjs` 会替你检查这两点。
+
 ### 在配置文件里改
 
 也可以写插件行 `config`（`cordis.patch.yml`）：
