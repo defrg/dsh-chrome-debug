@@ -48,16 +48,34 @@ DSH（DeepSeek Harness）插件：**把 Chrome 的调试能力接成工具，并
 | `timeoutMs` | `15000` | 单条 CDP 命令超时 |
 | `maxTextChars` | `8000` | 工具返回文本截断上限 |
 
-想固定下来，在插件行 `config` 里写（`cordis.patch.yml`，或 GUI 的 设置 → 插件）：
+### 在 GUI 里改（推荐）
+
+插件导出了 schemastery 的 `Config` schema，所以 **设置 → 插件 → `dsh-chrome-debug`** 会直接渲染出表单：
+**chrome 路径**与 **user-data-dir** 各一个输入框（此外还有端口、截图目录、headless、追加参数等共 9 项），
+每项都带说明与默认值。改动会写入本 profile 的覆盖层，**不需要重启**即可生效。
+
+留空即走下面的可移植默认值 —— 也就是说"自动探测 Chrome"和"profile 落在 DSH 数据根下"都是默认行为。
+
+### 在配置文件里改
+
+也可以写插件行 `config`（`cordis.patch.yml`）：
 
 ```yaml
 config:
-  port: 9222
-  userDataDir: '<你的调试专用 profile 目录>'   # 例如 D:\chrome-debug-profile
-  screenshotDir: '<截图目录>'
+  chromePath: '<chrome.exe 路径>'          # 留空 = 自动探测
+  userDataDir: '<调试专用 profile 目录>'   # 留空 = <DSH_HOME>/chrome-debug/profile
+  screenshotDir: '<截图目录>'              # 留空 = <DSH_HOME>/chrome-debug/shots
 ```
 
 改配置**不需要重启**（`apply(ctx, config)` 会用新 config 重新执行）；改代码才需要重启（宿主插件走 ESM 模块缓存）。
+
+### 自检（不依赖 DSH、不启动 Chrome）
+
+```powershell
+node scripts/check-config.mjs
+```
+
+验证宿主模块能否加载（语法/依赖问题会在这里暴露），并打印表单会渲染的字段清单。退出码 `0` = 通过。
 
 ## 安装（desktop profile）
 
