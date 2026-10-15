@@ -29,6 +29,7 @@ DSH（DeepSeek Harness）插件：**把 Chrome 的调试能力接成工具，并
 | `chrome_screenshot` | 截图存 PNG（可整页），落盘后可用 `read_image` 查看 |
 | `chrome_cdp` | **任意 CDP 命令**（逃生口）；`browser: true` 发到浏览器级端点 |
 | `chrome_stop` | 关闭这个调试实例（`Browser.close`），不影响你日常的 Chrome |
+| `chrome_config` | 读/改本插件配置（`chromePath` / `userDataDir` / `screenshotDir`），走官方 `settings.update()` 写回 profile 覆盖层，**即时生效** |
 
 `chrome_status` / `chrome_tabs` 是只读的，允许并发；其余工具**有意串行**（`isConcurrencySafe=false`）：同一个页面上的导航/求值/截图并发会互相打架。
 
@@ -50,18 +51,24 @@ DSH（DeepSeek Harness）插件：**把 Chrome 的调试能力接成工具，并
 
 ### 在 GUI 里改（推荐）
 
-插件导出了 schemastery 的 `Config` schema，所以 **设置 → 插件 → `dsh-chrome-debug`** 会直接渲染出表单：
-**chrome 路径**与 **user-data-dir** 各一个输入框（此外还有端口、截图目录、headless、追加参数等共 9 项），
-每项都带说明与默认值。改动会写入本 profile 的覆盖层，**不需要重启**即可生效。
+**设置 → 插件 → `dsh-chrome-debug`** 的页面里有一张配置卡片（位于描述与行列表之间），含三个输入框：
+**Chrome 可执行文件路径**、**调试专用 user-data-dir**、**截图落盘目录**，外加「保存」与「清空（改用默认值）」，
+下方回显**当前生效值**（解析后的真实路径与端口）。保存后**立即生效，无需重启**。
 
-留空即走下面的可移植默认值 —— 也就是说"自动探测 Chrome"和"profile 落在 DSH 数据根下"都是默认行为。
+留空即走下面的可移植默认值 —— "自动探测 Chrome"和"profile 落在 DSH 数据根下"都是默认行为。
+其余旋钮（`port` / `headless` / `extraArgs` / 两个超时 / `maxTextChars`）也已在 schema 中声明，
+可用 `chrome_config` 工具或插件行 `config` 设置。
 
-> **改代码时的硬性要求**：表单字段必须在 schema 里标 **`.volatile()`**。按官方 cookbook
-> [实践指南：即时配置表单](https://deepseek-harness.github.io/deepseek-harness/reference/cookbook/adding-a-settings-card)，
-> **普通字段不进入设置 schema** —— 漏标的表现就是"插件详情页里一个输入框都没有"（宿主侧的 `Config` 状态会停在 `absent`）。
-> 相应地，运行时这些字段拿到的是 `Volatile<T>` 包装，要用 `.get()` 取值：本插件在每个工具调用前重新快照配置，
+> **改代码时的硬性要求（两条）**：
+> ① 表单字段必须标 **`.volatile()`**。按官方 cookbook [实践指南：即时配置表单](https://deepseek-harness.github.io/deepseek-harness/reference/cookbook/adding-a-settings-card)，
+> **普通字段不进入设置 schema** —— 漏标的表现就是"插件详情页里一个输入框都没有"（宿主侧 `Config` 状态会停在 `absent`）。
+> ② **DSH 不会给第三方 bundle 自动生成表单** —— 必须自带客户端半侧（`lib/client.js`）注册进
+> `plugins.bundle.config`（key = 包名）。官方插件靠"伴生客户端包"注册进 `plugins.item`（设置页里那些官方插件卡片就是这条路），
+> 第三方就像本插件这样自带一张卡 —— 已装的 `dsh-session-manager` 用的是同一种做法。
+>
+> 运行时 volatile 字段是 `Volatile<T>` 包装（用 `.get()` 取值）：本插件在每个工具调用前重新快照，
 > 并在 `loader/volatile-update` 时刷新，所以**界面改完即时生效、无需重启**。
-> `node scripts/check-config.mjs` 会替你检查这两点。
+> `node scripts/check-config.mjs` 会检查 schema 与 volatile 标记这两点。
 
 ### 在配置文件里改
 
@@ -74,7 +81,8 @@ config:
   screenshotDir: '<截图目录>'              # 留空 = <DSH_HOME>/chrome-debug/shots
 ```
 
-改配置**不需要重启**（`apply(ctx, config)` 会用新 config 重新执行）；改代码才需要重启（宿主插件走 ESM 模块缓存）。
+配置改动**不需要重启**：volatile 字段会发出 `loader/volatile-update`，插件随即重新快照（见 `lib/index.js` 的 `snapshot()`）。
+**改代码才需要重启**（宿主插件走 ESM 模块缓存）；改客户端半侧可 disable + enable 插件，或重启后刷新页面。
 
 ### 自检（不依赖 DSH、不启动 Chrome）
 
