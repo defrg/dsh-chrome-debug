@@ -1,0 +1,8 @@
+# pnpm 项目级设置（pnpm 10+ 从这里读取，.npmrc 里的同名项已不再生效）。
+#
+# 关掉「自动安装缺失的 peer 依赖」：
+#   @deepseek-ai/cordis 与 @deepseek-ai/dsh 是**宿主运行时提供**的 peerDependency，
+#   插件自己不需要、也不应该有它们。pnpm 默认会把缺失的 peer 自动装进来，于是
+#   在插件目录里拖下一整条 dsh 依赖树（实测 529 个包 / 453 MB）；
+#   关掉后只剩 dependencies 里真正需要的 @deepseek-ai/schemastery（43 个文件 / 0.2 MB）。
+autoInstallPeers: false
