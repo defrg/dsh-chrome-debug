@@ -43,7 +43,7 @@ DSH（DeepSeek Harness）插件：**把 Chrome 的调试能力接成工具，并
 | `port` | `9222` | 调试端口 |
 | `userDataDir` | `<DSH_HOME>/chrome-debug/profile` | 调试专用 profile。`DSH_HOME` 默认 `~/.dsh`。**不要指向你日常的 profile** |
 | `screenshotDir` | `<DSH_HOME>/chrome-debug/shots` | 截图落盘目录 |
-| `extraArgs` | `[]` | 追加启动参数，如 `["--headless=new"]`、`["--remote-allow-origins=*"]` |
+| `extraArgs` | `[]` | 追加启动参数，如 `["--remote-allow-origins=*"]`。**插件掌管的开关不能出现在这里**：`--remote-debugging-port` / `--user-data-dir` / `--headless` / `--no-first-run` / `--no-default-browser-check` 会被拒绝（Chrome 对重复开关的取舍按开关而异，见下），`--remote-debugging-address` 被直接禁止（它会把调试端口暴露到局域网） |
 | `headless` | `false` | `true` 则加 `--headless=new` |
 | `startTimeoutMs` | `20000` | 启动后等端点就绪的上限 |
 | `timeoutMs` | `15000` | 单条 CDP 命令超时 |
@@ -112,7 +112,9 @@ dsh plugin --profile desktop add <本仓库路径>\dsh-chrome-debug
 ## 已知边界与坑
 
 - **同一个 `user-data-dir` 已有一个"没开调试端口"的 Chrome 在跑** → Chrome 会把新命令转交给既有实例，端口永远不开。插件的处理是：轮询超时后**明确报错**并给出提示（附当前 `chrome.exe` 进程数），让你先关掉那个实例或换目录。
-- 端口只绑 `127.0.0.1`（插件不传 `--remote-debugging-address`）。调试端口等于浏览器完全控制权，**不要对外暴露**。
+- 端口只绑 `127.0.0.1`（插件不传 `--remote-debugging-address`，并且该开关被**明令禁止**出现在 `extraArgs` 里）。调试端口等于浏览器完全控制权，**不要对外暴露**。
+- **配置路由是鉴权的**：`/chrome-debug/api` 套用了 Connection 的 Host/Origin 校验与浏览器会话鉴权（`ctx.connection.requestRejection`）。**少了这道门，任何能访问本端口的页面都能盲发 POST 改写 `chromePath` / `userDataDir`，下一次 `chrome_launch` 就会用攻击者指定的可执行文件或浏览器 profile 启动。** 未鉴权请求会拿到 401/403，且不会发生任何写入（`scripts/check-route-auth.mjs` 覆盖了这两条）。
+- `extraArgs` 里**不能出现插件掌管的开关**：Chrome 对重复开关的取舍按开关而异（实测 Chromium 155：端口取**后者**、`--user-data-dir` 取**前者**），所以靠调换顺序无法保证生效值，插件改为在 spawn 之前直接拒绝（错误码 `INVALID_EXTRA_ARGS`，不会留下半启动进程）。
 - `userDataDir` 默认落在 DSH 数据根下、而不是你日常的 Chrome profile —— 这是刻意的：把主 profile 交给调试端口等于交出所有登录态。
 - `chrome_eval` 能执行任意 JS（包括读该 profile 的 cookie / localStorage）——这是调试能力的本质，所以务必用**独立的调试 profile**。
 - 返回值必须可 JSON 序列化；DOM 节点这类只能拿到 `description`。要更细的能力（`DOM.*`、`Input.*`、`Network.*`、`Emulation.*`）走 `chrome_cdp`。

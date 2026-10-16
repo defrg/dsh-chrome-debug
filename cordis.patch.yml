@@ -10,7 +10,10 @@
 #   chromePath     chrome.exe 路径（留空 = 自动探测）
 #   port           调试端口（默认 9222）
 #   userDataDir    调试专用 profile 目录；**不要指向你日常的 profile**
-#   extraArgs      追加的启动参数数组（例如 ["--remote-allow-origins=*"]、["--headless=new"]）
+#   extraArgs      追加的启动参数数组（例如 ["--remote-allow-origins=*"]）。
+#                  **不能**放插件掌管的开关（--remote-debugging-port / --user-data-dir /
+#                  --headless / --no-first-run / --no-default-browser-check 会被拒绝；
+#                  --remote-debugging-address 被禁止）；改端口/profile/headless 用上面的字段。
 #   headless       true 则加 --headless=new
 #   startTimeoutMs 启动后等端点就绪的上限（默认 20000）
 #   timeoutMs      单条 CDP 命令超时（默认 15000）
