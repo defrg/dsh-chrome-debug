@@ -7,6 +7,10 @@
 #   关掉后只剩 dependencies 里真正需要的 @deepseek-ai/schemastery（43 个文件 / 0.2 MB）。
 autoInstallPeers: false
 
-# store 固定放在项目内（与 node_modules 同级）。
-# 不写这行的话，pnpm 会退回盘根的 E:\.pnpm-store。
-storeDir: E:/project/dsh-plugins/dsh-chrome-debug/.pnpm-store
+# store 固定放在项目内（与 node_modules 同级），用**相对路径**。
+# 不写这行的话，pnpm 会退回盘根（本机是 E:\.pnpm-store）。
+#
+# 实测（`pnpm store path`）：相对写法 `.pnpm-store` 与 `./.pnpm-store` 都正确解析为
+# <本仓库>\.pnpm-store，因此这里不留本机绝对路径 —— 另一台机器的工作区在别处，
+# 写死 E:/... 会指到不存在的盘。约定见 dsh-capabilities 的 instructions/shared.md。
+storeDir: .pnpm-store
