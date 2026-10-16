@@ -6,3 +6,7 @@
 #   在插件目录里拖下一整条 dsh 依赖树（实测 529 个包 / 453 MB）；
 #   关掉后只剩 dependencies 里真正需要的 @deepseek-ai/schemastery（43 个文件 / 0.2 MB）。
 autoInstallPeers: false
+
+# store 固定放在项目内（与 node_modules 同级）。
+# 不写这行的话，pnpm 会退回盘根的 E:\.pnpm-store。
+storeDir: E:/project/dsh-plugins/dsh-chrome-debug/.pnpm-store
