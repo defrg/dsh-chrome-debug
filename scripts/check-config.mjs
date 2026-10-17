@@ -62,16 +62,21 @@ const details = Object.fromEntries(
 console.log(JSON.stringify({ name, inject, hasConfigSchema: Boolean(Config), fieldCount: fields.length, fields: details }, null, 2));
 
 let failed = false;
+// 「空跑判据」：数实际执行了几项检查。一项都没跑却报「通过」是最危险的绿灯。
+let assertions = 0;
 if (!Config) {
+  assertions += 1;
   console.error("✗ 没有导出 Config schema —— 「设置 → 插件」不会出现可编辑表单");
   failed = true;
 } else {
   for (const required of ["chromePath", "userDataDir"]) {
+    assertions += 1;
     if (!fields.includes(required)) {
       console.error(`✗ schema 里缺少 ${required} 字段（实测字段：${fields.join(", ") || "无"}）`);
       failed = true;
     }
   }
+  assertions += 1;
   const notVolatile = fields.filter((field) => volatileOf(dict[field]) !== true);
   if (notVolatile.length > 0) {
     console.error(`✗ 这些字段没标 .volatile()，不会出现在设置表单里：${notVolatile.join(", ")}`);
@@ -81,4 +86,8 @@ if (!Config) {
 }
 
 if (failed) process.exit(1);
-console.log(`✓ 模块可加载；schema 含 ${fields.length} 个 volatile 字段，chromePath / userDataDir 就位 —— 插件详情页会出现输入框`);
+if (assertions === 0) {
+  console.error("✗ 空跑：一项检查都没执行 —— 判为失败（不是通过）");
+  process.exit(1);
+}
+console.log(`✓ 模块可加载；schema 含 ${fields.length} 个 volatile 字段，chromePath / userDataDir 就位 —— 插件详情页会出现输入框（${assertions} 项检查）`);

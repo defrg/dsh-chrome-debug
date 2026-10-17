@@ -21,12 +21,20 @@
 import { apply, inject } from "../lib/index.js";
 
 let failed = 0;
+/**
+ * 「空跑判据」：数断言到底被调用了多少次。
+ * 一条都没跑 = 脚本被清空 / 被提前 return / 循环体没进 —— 那种「绿」比红更危险。
+ * 收尾处断言数为 0 判为**失败**。
+ */
+let assertions = 0;
 
 function ok(label) {
+  assertions += 1;
   console.log(`  ✓ ${label}`);
 }
 
 function bad(label, detail) {
+  assertions += 1;
   failed += 1;
   console.error(`  ✗ ${label}${detail ? ` —— ${detail}` : ""}`);
 }
@@ -205,4 +213,9 @@ if (failed > 0) {
   console.error(`✗ ${failed} 项断言失败 —— 这条路由的鉴权门有问题`);
   process.exit(1);
 }
-console.log("✓ 路由鉴权门工作正常：未鉴权请求既拿不到配置，也写不进配置");
+// 空跑即失败：断言数为 0 时绝不能报「通过」
+if (assertions === 0) {
+  console.error("✗ 空跑：一条断言都没执行 —— 判为失败（不是通过）");
+  process.exit(1);
+}
+console.log(`✓ 路由鉴权门工作正常：未鉴权请求既拿不到配置，也写不进配置（${assertions} 项断言）`);

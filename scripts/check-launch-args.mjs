@@ -18,8 +18,14 @@
 import { buildChromeArgs, validateExtraArgs, resolveConfig } from "../lib/cdp.js";
 
 let failed = 0;
+/**
+ * 「空跑判据」：数断言到底被调用了多少次。一条都没跑 = 脚本被清空 / 提前返回，
+ * 那种「绿」比红更危险。收尾处断言数为 0 判为**失败**。
+ */
+let assertions = 0;
 
 function assert(condition, label, detail) {
+  assertions += 1;
   if (condition) {
     console.log(`  ✓ ${label}`);
   } else {
@@ -110,4 +116,9 @@ if (failed > 0) {
   console.error(`✗ ${failed} 项断言失败 —— extraArgs 校验有问题`);
   process.exit(1);
 }
-console.log("✓ extraArgs 校验正常：插件掌管的开关无法被重复指定，回环不变量无法被破坏");
+// 空跑即失败：断言数为 0 时绝不能报「通过」
+if (assertions === 0) {
+  console.error("✗ 空跑：一条断言都没执行 —— 判为失败（不是通过）");
+  process.exit(1);
+}
+console.log(`✓ extraArgs 校验正常：插件掌管的开关无法被重复指定，回环不变量无法被破坏（${assertions} 项断言）`);
